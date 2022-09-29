@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Component } from 'react';
+import { useState } from 'react';
 import { FcSearch } from 'react-icons/fc';
 
 import {
@@ -10,46 +10,42 @@ import {
   SearchFormInput,
 } from './Searchbar.styled';
 
-class Searchbar extends Component {
-  state = {
-    query: '',
-  };
+const Searchbar = ({ onSubmit }) => {
+  const [query, setQuery] = useState('');
 
-  handleInput = event => {
+  const handleInput = event => {
     const query = event.currentTarget.value;
-    this.setState({ query: query });
+    setQuery(query);
   };
 
-  handleSubmit = event => {
+  const handleSubmit = event => {
     event.preventDefault();
-    if (this.state.query.trim() === '') return alert('no search query');
-    this.props.onSubmit(this.state.query);
-    this.setState({ query: '' });
+    if (query.trim() === '') return alert('no search query');
+    onSubmit(query);
+    setQuery('');
   };
 
-  render() {
-    return (
-      <HeaderForm>
-        <SearchForm onSubmit={this.handleSubmit}>
-          <SearchFormButton type="submit">
-            <FcSearch size="30" />
-            <SearchFormButtonLabel>Search</SearchFormButtonLabel>
-          </SearchFormButton>
+  return (
+    <HeaderForm>
+      <SearchForm onSubmit={handleSubmit}>
+        <SearchFormButton type="submit">
+          <FcSearch size="30" />
+          <SearchFormButtonLabel>Search</SearchFormButtonLabel>
+        </SearchFormButton>
 
-          <SearchFormInput
-            type="text"
-            autocomplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            name="query"
-            value={this.state.query}
-            onChange={this.handleInput}
-          />
-        </SearchForm>
-      </HeaderForm>
-    );
-  }
-}
+        <SearchFormInput
+          type="text"
+          autocomplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          name="query"
+          value={query}
+          onChange={handleInput}
+        />
+      </SearchForm>
+    </HeaderForm>
+  );
+};
 
 export default Searchbar;
 
