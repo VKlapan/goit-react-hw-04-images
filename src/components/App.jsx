@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import Searchbar from './Searchbar/Searchbar';
 import ImageGallery from './ImageGallery/ImageGallery';
 import { getGalleryData } from 'servises/handleApi';
@@ -7,59 +7,43 @@ import { Gallery } from './ImageGallery/ImageGallery.styled';
 import Button from './Button/Button';
 import Loader from './Loader/Loader';
 
-export class App extends Component {
-  state = {
-    images: [],
-    query: '',
-    loading: false,
-    error: null,
-    page: 1,
-    total: 1,
+export const App = () => {
+  const [images, setImages] = useState([]);
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(1);
+
+  useEffect(() => {
+    getImages();
+    scrollPage();
+  }, [query, page]);
+
+  const searchImage = query => {
+    setQuery(query);
+    setLoading(true);
+    setError(null);
+    setImages([]);
+    setPage(1);
   };
 
-  async componentDidMount() {
-    //   this.getImages();
-  }
-
-  async componentDidUpdate(prevProps, prevState) {
-    if (prevState.query !== this.state.query) {
-      this.getImages();
-    }
-
-    if (
-      prevState.page !== this.state.page &&
-      prevState.query === this.state.query
-    ) {
-      this.getImages();
-    }
-    this.scrollPage();
-  }
-
-  searchImage = query => {
-    this.setState({
-      loading: true,
-      query: query,
-      error: null,
-      images: [],
-      page: 1,
-    });
+  const loadMore = () => {
+    setPage(prevState => prevState + 1);
   };
 
-  loadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
-  };
-
-  async getImages() {
-    await getGalleryData(this.state.query, this.state.page)
+  const getImages = async () => {
+    await getGalleryData(query, page)
       .then(result => {
-        const newImages = [...this.state.images, ...result.images];
-        this.setState({ images: newImages, total: result.total });
+        const newImages = [...images, ...result.images];
+        setImages(newImages);
+        setTotal(result.total);
       })
-      .catch(error => this.setState({ error: error }))
-      .finally(() => this.setState({ loading: false }));
-  }
+      .catch(error => setError(error))
+      .finally(() => setLoading(false));
+  };
 
-  scrollPage() {
+  const scrollPage = () => {
     const { height: cardHeight } = document
       .querySelector('#gallery')
       .firstElementChild.getBoundingClientRect();
@@ -68,23 +52,19 @@ export class App extends Component {
       top: cardHeight,
       behavior: 'smooth',
     });
-  }
+  };
 
-  render() {
-    const { images, total } = this.state;
-
-    return (
-      <>
-        <Searchbar onSubmit={this.searchImage} />
-        <Gallery id="gallery">
-          {this.state.loading && <Loader />}
-          {this.state.error && <div>Opsss... {this.state.error}</div>}
-          <ImageGallery images={images} />
-          {this.state.page < total && !this.state.error && (
-            <Button clickHandle={this.loadMore}>LOAD MORE</Button>
-          )}
-        </Gallery>
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <Searchbar onSubmit={searchImage} />
+      <Gallery id="gallery">
+        {loading && <Loader />}
+        {error && <div>Opsss... {error}</div>}
+        <ImageGallery images={images} />
+        {page < total && !error && (
+          <Button clickHandle={loadMore}>LOAD MORE</Button>
+        )}
+      </Gallery>
+    </>
+  );
+};
