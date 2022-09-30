@@ -16,10 +16,7 @@ export const Modal = ({ src, alt, onClose }) => {
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      console.log('unmount');
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   });
 
   return createPortal(
