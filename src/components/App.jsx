@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import Searchbar from './Searchbar/Searchbar';
 import ImageGallery from './ImageGallery/ImageGallery';
 import { getGalleryData } from 'servises/handleApi';
@@ -8,40 +8,65 @@ import Button from './Button/Button';
 import Loader from './Loader/Loader';
 
 export const App = () => {
+  const [state, setState] = useState({
+    query: '',
+    page: 0,
+    images: [],
+    loading: false,
+    error: null,
+    lastPage: true,
+  });
+
   const [images, setImages] = useState([]);
-  const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(1);
 
-  useEffect(() => {
+  const onSubmitRef = useRef(null);
+
+  const getImages = useCallback(
+    searchTerm => {
+      const query = searchTerm === undefined ? state.query : searchTerm;
+      const page = searchTerm === undefined ? state.page + 1 : 1;
+
+      setState({ query, loading: true, error: null, images: [], page });
+
+      getGalleryData(query, page)
+        .then(result => {
+          setState({
+            query,
+            images: result.images,
+            error: null,
+            loading: false,
+            page,
+            lastPage: page === result.total,
+          });
+          setImages(page === 1 ? result.images : [...images, ...result.images]);
+        })
+        .catch(error => {
+          setState({ query, error, loading: false, images: [], page });
+          setImages([]);
+        });
+    },
+    [images, state, setState, setImages]
+  );
+
+  const searchImage = useCallback(
+    query => {
+      getImages(query);
+    },
+    [getImages]
+  );
+
+  onSubmitRef.current = searchImage;
+
+  const loadMore = useCallback(() => {
     getImages();
-    scrollPage();
-  }, [query, page]);
+  }, [getImages]);
 
-  const searchImage = query => {
-    setQuery(query);
-    setLoading(true);
-    setError(null);
-    setImages([]);
-    setPage(1);
-  };
-
-  const loadMore = () => {
-    setPage(prevState => prevState + 1);
-  };
-
-  const getImages = async () => {
-    await getGalleryData(query, page)
-      .then(result => {
-        const newImages = [...images, ...result.images];
-        setImages(newImages);
-        setTotal(result.total);
-      })
-      .catch(error => setError(error))
-      .finally(() => setLoading(false));
-  };
+  const onSubmit = useCallback(
+    query => {
+      onSubmitRef.current(query);
+    },
+    [onSubmitRef]
+  );
 
   const scrollPage = () => {
     const { height: cardHeight } = document
@@ -54,15 +79,24 @@ export const App = () => {
     });
   };
 
+  useEffect(() => {
+    scrollPage();
+  }, [state]);
+
   return (
     <>
-      <Searchbar onSubmit={searchImage} />
+      <Searchbar onSubmit={onSubmit} />
       <Gallery id="gallery">
-        {loading && <Loader />}
-        {error && <div>Opsss... {error}</div>}
+        {state.loading && <Loader />}
+        {state.error && <div>Opsss... {state.error}</div>}
         <ImageGallery images={images} />
-        {page < total && !error && (
-          <Button clickHandle={loadMore}>LOAD MORE</Button>
+        {!state.lastPage && !state.error && !state.loading && (
+          <Button
+            disabled={state.loading || state.error}
+            clickHandle={loadMore}
+          >
+            LOAD MORE
+          </Button>
         )}
       </Gallery>
     </>

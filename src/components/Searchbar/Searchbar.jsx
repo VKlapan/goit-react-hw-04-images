@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { FcSearch } from 'react-icons/fc';
 
 import {
@@ -13,17 +13,23 @@ import {
 const Searchbar = ({ onSubmit }) => {
   const [query, setQuery] = useState('');
 
-  const handleInput = event => {
-    const query = event.currentTarget.value;
-    setQuery(query);
-  };
+  const handleInput = useCallback(
+    event => {
+      const query = event.currentTarget.value;
+      setQuery(query);
+    },
+    [setQuery]
+  );
 
-  const handleSubmit = event => {
-    event.preventDefault();
-    if (query.trim() === '') return alert('no search query');
-    onSubmit(query);
-    setQuery('');
-  };
+  const handleSubmit = useCallback(
+    event => {
+      event.preventDefault();
+      if (query.trim() === '') return alert('no search query');
+      onSubmit(query);
+      setQuery('');
+    },
+    [query, setQuery, onSubmit]
+  );
 
   return (
     <HeaderForm>
@@ -36,7 +42,6 @@ const Searchbar = ({ onSubmit }) => {
         <SearchFormInput
           type="text"
           autocomplete="off"
-          autoFocus
           placeholder="Search images and photos"
           name="query"
           value={query}
@@ -47,7 +52,7 @@ const Searchbar = ({ onSubmit }) => {
   );
 };
 
-export default Searchbar;
+export default memo(Searchbar);
 
 Searchbar.propTypes = {
   onSubmit: PropTypes.func.isRequired,

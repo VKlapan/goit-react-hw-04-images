@@ -1,15 +1,15 @@
 import PropTypes from 'prop-types';
 import { GalleryItem, GalleryItemImage } from './ImageGalleryItem.styled';
 import { Modal } from '../Modal/Modal';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 const ImageGalleryItem = ({ image }) => {
   const { largeImageURL, webformatURL, tags } = image;
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const toggleModal = () => {
+  const toggleModal = useCallback(() => {
     setIsModalOpen(prevState => !prevState);
-  };
+  }, [setIsModalOpen]);
 
   return (
     <GalleryItem>
